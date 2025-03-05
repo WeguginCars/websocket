@@ -1,7 +1,7 @@
 package api
 
 import (
-	// _ "wegugin/api/docs"
+	_ "wegugin/api/docs"
 	"wegugin/api/handler"
 	"wegugin/api/middleware"
 

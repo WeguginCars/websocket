@@ -4,9 +4,6 @@ services:
   websocket-service:
     container_name: websocket-gateway
     build: .
-    depends_on:
-      postgres-db:
-        condition: service_healthy
     ports:
       - "4444:4444"
     networks:

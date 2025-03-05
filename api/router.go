@@ -20,14 +20,13 @@ import (
 func Router(hand *handler.Handler) *gin.Engine {
 	router := gin.New()
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	car := router.Group("/v1/car/photo")
-	car.Use(middleware.Check)
-	car.Use(middleware.CheckPermissionMiddleware(hand.Enforcer))
 	{
-		car.POST("/:car_id", hand.CreatePhoto)
-		car.GET("/:car_id", hand.GetImagesByCar)
-		car.DELETE("/:id", hand.DeleteImage)
-		car.DELETE("/car/:car_id", hand.DeleteImagesByCarId)
+		car.POST("/:car_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.CreatePhoto)
+		car.GET("/:car_id", hand.GetImagesByCar) // Middleware YO‘Q
+		car.DELETE("/:id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteImage)
+		car.DELETE("/car/:car_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteImagesByCarId)
 	}
 
 	return router

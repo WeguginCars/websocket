@@ -30,21 +30,19 @@ func (h *Handler) CreatePhoto(c *gin.Context) {
 	}
 	fmt.Println("2")
 	token := c.GetHeader("Authorization")
+	fmt.Println("3")
 	userId, _, err := auth.GetUserIdFromToken(token)
+	fmt.Println("4")
 	if err != nil {
 		h.Log.Error("Error getting user id from token", "error", err)
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	id := c.Param("id")
-	if len(id) == 0 {
-		h.Log.Error("id is required")
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "id is required"})
-		return
-	}
+	fmt.Println("5")
 	fmt.Println(userId, Id)
-	check, err := h.Crud.CheckCarOwnership(c, &pb.BoolCheckCar{UserId: userId, CarId: id})
-	fmt.Println("3")
+
+	check, err := h.Crud.CheckCarOwnership(c, &pb.BoolCheckCar{UserId: userId, CarId: Id})
+	fmt.Println("6")
 	if err != nil {
 		h.Log.Error("Error checking car ownership", "error", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error checking car ownership"})

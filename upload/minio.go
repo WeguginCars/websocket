@@ -17,6 +17,7 @@ type MinioUploader struct {
 }
 
 func NewMinioUploader() (*MinioUploader, error) {
+	fmt.Println("minioda")
 	cfg := config.Load()
 	client, err := minio.New(cfg.Minio.MINIO_ENDPOINT, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.Minio.MINIO_ACCESS_KEY_ID, cfg.Minio.MINIO_SECRET_ACCESS_KEY, ""),
@@ -26,10 +27,12 @@ func NewMinioUploader() (*MinioUploader, error) {
 		return nil, fmt.Errorf("failed to create minio client: %v", err)
 	}
 
+	fmt.Println("chiqdi")
 	return &MinioUploader{client: client}, nil
 }
 
 func (m *MinioUploader) UploadFile(bucketName string, file multipart.File, header *multipart.FileHeader) (string, error) {
+	fmt.Println("minioda1")
 	ctx := context.Background()
 
 	// Generate unique filename
@@ -67,7 +70,9 @@ func (m *MinioUploader) UploadFile(bucketName string, file multipart.File, heade
 	// Generate URL
 	// UploadFile funktsiyasida:
 	url := fmt.Sprintf("http://%s/%s/%s", config.Load().Minio.MINIO_ENDPOINT, bucketName, newFileName)
+	fmt.Println("minioda2")
 	return url, nil
+
 }
 
 func getContentType(fileExt string) string {

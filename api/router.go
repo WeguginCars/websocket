@@ -21,6 +21,15 @@ func Router(hand *handler.Handler) *gin.Engine {
 	router := gin.New()
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	// WebSocket uchun chat
+	router.GET("/v1/messages/ws", hand.ChatWebSocket)
+	message := router.Group("/v1/car/message")
+	{
+		message.POST("", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.SendMessage)
+		message.POST("/:message_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.MarkMessageAsRead)
+		message.DELETE("/:message_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteMessage)
+	}
+
 	car := router.Group("/v1/car/photo")
 	{
 		car.POST("/:car_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.CreatePhoto)

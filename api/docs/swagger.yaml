@@ -10,9 +10,115 @@ definitions:
       uploaded_at:
         type: string
     type: object
+  cruds.Message:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      read:
+        type: boolean
+      recipient_id:
+        type: string
+      sender_id:
+        type: string
+    type: object
+  model.SendMessageBody:
+    properties:
+      content:
+        type: string
+      recipient_id:
+        type: string
+    required:
+    - content
+    - recipient_id
+    type: object
 info:
   contact: {}
 paths:
+  /v1/car/message:
+    post:
+      description: Send Message
+      parameters:
+      - description: info
+        in: body
+        name: info
+        required: true
+        schema:
+          $ref: '#/definitions/model.SendMessageBody'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/cruds.Message'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: SendMessage
+      tags:
+      - MESSAGES
+  /v1/car/message/{message_id}:
+    delete:
+      description: Delete Message
+      parameters:
+      - description: message_id
+        in: path
+        name: message_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Message
+      tags:
+      - MESSAGES
+    post:
+      description: mark message as read
+      parameters:
+      - description: message_id
+        in: path
+        name: message_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: MarkMessageAsRead
+      tags:
+      - MESSAGES
   /v1/car/photo/{car_id}:
     get:
       description: it will Get Car Photos

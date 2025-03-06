@@ -4,6 +4,135 @@
         "contact": {}
     },
     "paths": {
+        "/v1/car/message": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send Message",
+                "tags": [
+                    "MESSAGES"
+                ],
+                "summary": "SendMessage",
+                "parameters": [
+                    {
+                        "description": "info",
+                        "name": "info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SendMessageBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/cruds.Message"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/car/message/{message_id}": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "mark message as read",
+                "tags": [
+                    "MESSAGES"
+                ],
+                "summary": "MarkMessageAsRead",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "message_id",
+                        "name": "message_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete Message",
+                "tags": [
+                    "MESSAGES"
+                ],
+                "summary": "Delete Message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "message_id",
+                        "name": "message_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/car/photo/car/{car_id}": {
             "delete": {
                 "security": [
@@ -194,6 +323,44 @@
                     "type": "string"
                 },
                 "uploaded_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "cruds.Message": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "read": {
+                    "type": "boolean"
+                },
+                "recipient_id": {
+                    "type": "string"
+                },
+                "sender_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.SendMessageBody": {
+            "type": "object",
+            "required": [
+                "content",
+                "recipient_id"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "recipient_id": {
                     "type": "string"
                 }
             }

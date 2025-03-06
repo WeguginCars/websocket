@@ -1,3 +1,6 @@
 p, user, /v1/car/photo/:car_id, POST
 p, user, /v1/car/photo/:id, DELETE
 p, user, /v1/car/photo/:car_id, DELETE
+p, user, /v1/car/message, POST
+p, user, /v1/car/message/:message_id, POST
+p, user, /v1/car/message/:message_id, DELETE

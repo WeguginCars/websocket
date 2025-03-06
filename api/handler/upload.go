@@ -17,6 +17,7 @@ import (
 // @Param file formData file true "UploadMediaForm"
 // @Success 200 {object} string
 // @Failure 400 {object} string
+// @Failure 401 {object} string
 // @Failure 500 {object} string
 // @Router /v1/car/photo/{car_id} [post]
 func (h *Handler) CreatePhoto(c *gin.Context) {
@@ -114,6 +115,7 @@ func (h *Handler) GetImagesByCar(c *gin.Context) {
 // @Param id path string true "id"
 // @Success 200 {object} string
 // @Failure 400 {object} string
+// @Failure 401 {object} string
 // @Failure 500 {object} string
 // @Router /v1/car/photo/{id} [delete]
 func (h *Handler) DeleteImage(c *gin.Context) {
@@ -159,6 +161,7 @@ func (h *Handler) DeleteImage(c *gin.Context) {
 // @Param car_id path string true "car_id"
 // @Success 200 {object} string
 // @Failure 400 {object} string
+// @Failure 401 {object} string
 // @Failure 500 {object} string
 // @Router /v1/car/photo/car/{car_id} [delete]
 func (h *Handler) DeleteImagesByCarId(c *gin.Context) {

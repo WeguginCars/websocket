@@ -14,6 +14,7 @@ import (
 // @Description Upload Car Photo
 // @Tags IMAGES
 // @Param car_id path string true "car_id"
+// @Accept multipart/form-data
 // @Param file formData file true "UploadMediaForm"
 // @Success 200 {object} string
 // @Failure 400 {object} string

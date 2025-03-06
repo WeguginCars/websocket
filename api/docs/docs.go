@@ -240,6 +240,9 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Upload Car Photo",
+                "consumes": [
+                    "multipart/form-data"
+                ],
                 "tags": [
                     "IMAGES"
                 ],

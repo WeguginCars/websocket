@@ -20,7 +20,6 @@ import (
 // @Failure 500 {object} string
 // @Router /v1/car/photo/{car_id} [post]
 func (h *Handler) CreatePhoto(c *gin.Context) {
-	fmt.Println("1")
 	token := c.GetHeader("Authorization")
 	userId, _, err := auth.GetUserIdFromToken(token)
 	if err != nil {
@@ -29,14 +28,13 @@ func (h *Handler) CreatePhoto(c *gin.Context) {
 		return
 	}
 	h.Log.Info("UploadProductPhoto called")
-	fmt.Println("2")
 	Id := c.Param("car_id")
 	if len(Id) == 0 {
 		h.Log.Error("car_id is required")
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Car id is required"})
 		return
 	}
-	fmt.Println("3")
+	fmt.Println(userId)
 	check, err := h.Crud.CheckCarOwnership(c, &pb.BoolCheckCar{UserId: userId, CarId: Id})
 	if err != nil {
 		h.Log.Error("Error checking car ownership", "error", err)
@@ -48,7 +46,6 @@ func (h *Handler) CreatePhoto(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User does not own the car"})
 		return
 	}
-	fmt.Println("4")
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
 		h.Log.Error("Error retrieving the file", "error", err)
@@ -63,7 +60,6 @@ func (h *Handler) CreatePhoto(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Println("5")
 	res, err := h.Crud.AddImage(c, &pb.AddImageRequest{
 		CarId:    Id,
 		Filename: url,
@@ -73,7 +69,6 @@ func (h *Handler) CreatePhoto(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error creating photo"})
 		return
 	}
-	fmt.Println("6")
 	h.Log.Info("Photo uploaded successfully")
 	c.JSON(http.StatusOK, gin.H{"photo_id": res.Id, "url1": url, "url2": res.Filename})
 }

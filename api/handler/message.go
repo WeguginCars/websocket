@@ -31,6 +31,7 @@ func (h *Handler) ChatWebSocket(c *gin.Context) {
 		log.Println("Authorization header is required")
 		return
 	}
+
 	userID, _, err := auth.GetUserIdFromToken(token)
 	if userID == "" {
 		log.Println("User ID is required")
@@ -38,15 +39,27 @@ func (h *Handler) ChatWebSocket(c *gin.Context) {
 	}
 
 	ctx := context.Background()
+
+	// WebSocket o'qish uchun goroutine ishga tushiramiz
+	go func() {
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				log.Println("User disconnected:", err)
+				conn.Close()
+				return
+			}
+		}
+	}()
+
+	// Xabarlarni userga yuborish
 	for {
-		// User xabarlarini olish
 		messages, err := h.Crud.GetMessagesByUser(ctx, &cruds.GetMessagesByUserRequest{UserId: userID})
 		if err != nil {
 			log.Println("Error fetching messages:", err)
 			break
 		}
 
-		// WebSocket orqali clientga yuborish
 		err = conn.WriteJSON(messages)
 		if err != nil {
 			log.Println("Error writing message:", err)

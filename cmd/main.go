@@ -26,7 +26,7 @@ func main() {
 
 func NewHandler() *handler.Handler {
 	conf := config.Load()
-	connUser, err := grpc.NewClient(conf.Server.GRPC_PORT, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	connUser, err := grpc.NewClient(conf.Server.USER_PORT, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}

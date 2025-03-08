@@ -4,8 +4,10 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 	"wegugin/api/auth"
 	"wegugin/genproto/cruds"
+	"wegugin/genproto/user"
 	"wegugin/model"
 
 	"github.com/gin-gonic/gin"
@@ -33,6 +35,10 @@ func (h *Handler) ChatWebSocket(c *gin.Context) {
 	}
 
 	userID, _, err := auth.GetUserIdFromToken(token)
+	if err != nil {
+		log.Println("Error getting user ID from token:", err)
+		return
+	}
 	if userID == "" {
 		log.Println("User ID is required")
 		return
@@ -53,17 +59,40 @@ func (h *Handler) ChatWebSocket(c *gin.Context) {
 	}()
 
 	// Xabarlarni userga yuborish
-	for {
-		messages, err := h.Crud.GetMessagesByUser(ctx, &cruds.GetMessagesByUserRequest{UserId: userID})
-		if err != nil {
-			log.Println("Error fetching messages:", err)
-			break
-		}
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
 
-		err = conn.WriteJSON(messages)
-		if err != nil {
-			log.Println("Error writing message:", err)
-			break
+	for {
+		select {
+		case <-ticker.C:
+			messages, err := h.Crud.GetMessagesByUser(ctx, &cruds.GetMessagesByUserRequest{UserId: userID})
+			if err != nil {
+				log.Println("Error fetching messages:", err)
+				return // Loopdan chiqish o'rniga to'liq funktsiyani tugatish
+			}
+
+			// Xabarlarni qayta ishlash
+			for i := range messages.Groups {
+				UserInfo, err := h.User.GetUserById(ctx, &user.UserId{
+					Id: messages.Groups[i].UserId,
+				})
+				if err != nil {
+					log.Println("Error getting user info", err)
+					continue
+				}
+				messages.Groups[i].UserName = UserInfo.Name
+				messages.Groups[i].UserSurname = UserInfo.Surname
+			}
+
+			// WebSocket orqali jo'natish
+			if err := conn.WriteJSON(messages); err != nil {
+				log.Println("Error writing message:", err)
+				return // Xatolik yuz berganda loopdan chiqish
+			}
+		case <-c.Request.Context().Done():
+			// Client ulanishni uzgan holatda
+			log.Println("Connection closed by client")
+			return
 		}
 	}
 }

@@ -31,6 +31,7 @@ type RedisConfig struct {
 type ServerConfig struct {
 	HTTP_PORT string
 	GRPC_PORT string
+	USER_PORT string
 }
 
 type TokensConfig struct {
@@ -61,6 +62,7 @@ func Load() *Config {
 		Server: ServerConfig{
 			HTTP_PORT: cast.ToString(coalesce("HTTP_PORT", ":1234")),
 			GRPC_PORT: cast.ToString(coalesce("GRPC_PORT", ":5678")),
+			USER_PORT: cast.ToString(coalesce("USER_PORT", ":9000")),
 		},
 		Token: TokensConfig{
 			ACCES_KEY: cast.ToString(coalesce("ACCES_KEY", "access_key")),

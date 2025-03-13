@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -71,9 +70,6 @@ func (h *Handler) ChatWebSocket(c *gin.Context) {
 				log.Println("Error fetching messages:", err)
 				return // Loopdan chiqish o'rniga to'liq funktsiyani tugatish
 			}
-			fmt.Println("1", messages.Groups[0].Messages)
-			fmt.Println("2", messages)
-
 			// Xabarlarni qayta ishlash
 			for i := range messages.Groups {
 				UserInfo, err := h.User.GetUserById(ctx, &user.UserId{

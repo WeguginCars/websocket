@@ -25,6 +25,7 @@ const (
 	CrudsService_UpdateCar_FullMethodName                     = "/cruds.CrudsService/UpdateCar"
 	CrudsService_DeleteCar_FullMethodName                     = "/cruds.CrudsService/DeleteCar"
 	CrudsService_IncrementCarReviewCount_FullMethodName       = "/cruds.CrudsService/IncrementCarReviewCount"
+	CrudsService_SearchCar_FullMethodName                     = "/cruds.CrudsService/SearchCar"
 	CrudsService_CheckCarOwnership_FullMethodName             = "/cruds.CrudsService/CheckCarOwnership"
 	CrudsService_SaveCar_FullMethodName                       = "/cruds.CrudsService/SaveCar"
 	CrudsService_GetSavedCarsByUser_FullMethodName            = "/cruds.CrudsService/GetSavedCarsByUser"
@@ -67,6 +68,7 @@ type CrudsServiceClient interface {
 	UpdateCar(ctx context.Context, in *UpdateCarRequest, opts ...grpc.CallOption) (*Empty, error)
 	DeleteCar(ctx context.Context, in *Id, opts ...grpc.CallOption) (*Empty, error)
 	IncrementCarReviewCount(ctx context.Context, in *Id, opts ...grpc.CallOption) (*Empty, error)
+	SearchCar(ctx context.Context, in *SearchCarRequest, opts ...grpc.CallOption) (*ListCarsResponse, error)
 	CheckCarOwnership(ctx context.Context, in *BoolCheckCar, opts ...grpc.CallOption) (*BoolCheck, error)
 	// Saved Cars
 	SaveCar(ctx context.Context, in *SaveCarRequest, opts ...grpc.CallOption) (*Empty, error)
@@ -166,6 +168,16 @@ func (c *crudsServiceClient) IncrementCarReviewCount(ctx context.Context, in *Id
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
 	err := c.cc.Invoke(ctx, CrudsService_IncrementCarReviewCount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *crudsServiceClient) SearchCar(ctx context.Context, in *SearchCarRequest, opts ...grpc.CallOption) (*ListCarsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCarsResponse)
+	err := c.cc.Invoke(ctx, CrudsService_SearchCar_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -473,6 +485,7 @@ type CrudsServiceServer interface {
 	UpdateCar(context.Context, *UpdateCarRequest) (*Empty, error)
 	DeleteCar(context.Context, *Id) (*Empty, error)
 	IncrementCarReviewCount(context.Context, *Id) (*Empty, error)
+	SearchCar(context.Context, *SearchCarRequest) (*ListCarsResponse, error)
 	CheckCarOwnership(context.Context, *BoolCheckCar) (*BoolCheck, error)
 	// Saved Cars
 	SaveCar(context.Context, *SaveCarRequest) (*Empty, error)
@@ -535,6 +548,9 @@ func (UnimplementedCrudsServiceServer) DeleteCar(context.Context, *Id) (*Empty, 
 }
 func (UnimplementedCrudsServiceServer) IncrementCarReviewCount(context.Context, *Id) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IncrementCarReviewCount not implemented")
+}
+func (UnimplementedCrudsServiceServer) SearchCar(context.Context, *SearchCarRequest) (*ListCarsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchCar not implemented")
 }
 func (UnimplementedCrudsServiceServer) CheckCarOwnership(context.Context, *BoolCheckCar) (*BoolCheck, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckCarOwnership not implemented")
@@ -748,6 +764,24 @@ func _CrudsService_IncrementCarReviewCount_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CrudsServiceServer).IncrementCarReviewCount(ctx, req.(*Id))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CrudsService_SearchCar_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchCarRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrudsServiceServer).SearchCar(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CrudsService_SearchCar_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrudsServiceServer).SearchCar(ctx, req.(*SearchCarRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1304,6 +1338,10 @@ var CrudsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IncrementCarReviewCount",
 			Handler:    _CrudsService_IncrementCarReviewCount_Handler,
+		},
+		{
+			MethodName: "SearchCar",
+			Handler:    _CrudsService_SearchCar_Handler,
 		},
 		{
 			MethodName: "CheckCarOwnership",

@@ -86,8 +86,6 @@ func (h *Handler) ChatWebSocket(c *gin.Context) {
 				messages.Groups[i].UserName = UserInfo.Name
 				messages.Groups[i].UserSurname = UserInfo.Surname
 			}
-			fmt.Println("3", messages.Groups[0].Messages)
-
 			// WebSocket orqali jo'natish
 			if err := conn.WriteJSON(messages); err != nil {
 				log.Println("Error writing message:", err)

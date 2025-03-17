@@ -176,12 +176,7 @@ func (h *Handler) ChatWebSocketByUserAndId(c *gin.Context) {
 				continue
 			}
 
-			Istyping, err := redis.GetStatus(c, secondUserID, userID)
-			if err != nil {
-				log.Println("Error getting typing status", err)
-				continue
-			}
-
+			Istyping, _ := redis.GetStatus(c, secondUserID, userID)
 			// Agar ikkinchi user ham online bo'lsa, `is_user_online = true`
 			onlineUsers.Lock()
 			_, isUserOnline := onlineUsers.connections[secondUserID]

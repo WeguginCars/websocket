@@ -119,6 +119,27 @@ paths:
       summary: MarkMessageAsRead
       tags:
       - MESSAGES
+  /v1/car/message/disconnectwebsocket:
+    post:
+      description: Disconnect WebSocket
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: DisconnectWebSocket
+      tags:
+      - MESSAGES
   /v1/car/photo/{car_id}:
     get:
       description: it will Get Car Photos

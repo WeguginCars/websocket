@@ -23,11 +23,13 @@ func Router(hand *handler.Handler) *gin.Engine {
 
 	// WebSocket uchun chat
 	router.GET("/v1/messages/ws", hand.ChatWebSocket)
+	router.GET("/v1/messages/ws/chat", hand.ChatWebSocketByUserAndId)
 	message := router.Group("/v1/car/message")
 	{
 		message.POST("", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.SendMessage)
 		message.POST("/:message_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.MarkMessageAsRead)
 		message.DELETE("/:message_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteMessage)
+		message.POST("/disconnectwebsocket", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DisconnectWebSocket)
 	}
 
 	car := router.Group("/v1/car/photo")

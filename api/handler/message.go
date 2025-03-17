@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 	"wegugin/api/auth"
 	"wegugin/genproto/cruds"
@@ -13,6 +14,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
+
+var onlineUsers = struct {
+	sync.Mutex
+	connections map[string]*websocket.Conn
+}{connections: make(map[string]*websocket.Conn)}
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -93,6 +99,139 @@ func (h *Handler) ChatWebSocket(c *gin.Context) {
 			return
 		}
 	}
+}
+
+// WebSocket orqali xabarlarni olish va jo‘natish
+func (h *Handler) ChatWebSocketByUserAndId(c *gin.Context) {
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Println("WebSocket upgrade error:", err)
+		return
+	}
+	defer conn.Close()
+
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		log.Println("Authorization header is required")
+		return
+	}
+
+	// Token orqali foydalanuvchi ID olish
+	userID, _, err := auth.GetUserIdFromToken(token)
+	if err != nil || userID == "" {
+		log.Println("Error getting user ID from token:", err)
+		return
+	}
+
+	// So‘rovdan ikkinchi foydalanuvchi ID sini olish
+	secondUserID := c.Query("second_user_id")
+	if secondUserID == "" {
+		log.Println("Second user ID is required")
+		return
+	}
+
+	ctx := context.Background()
+
+	// Foydalanuvchini online deb belgilash
+	onlineUsers.Lock()
+	onlineUsers.connections[userID] = conn
+	onlineUsers.Unlock()
+
+	// Xabarlarni o‘qish uchun goroutine
+	go func() {
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				log.Println("User disconnected:", err)
+				h.disconnectUser(userID)
+				return
+			}
+		}
+	}()
+
+	// Xabarlarni userga yuborish
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			// Ikki user orasidagi xabarlarni olish
+			messages, err := h.Crud.GetMessageByUserAndId(ctx, &cruds.GetMessageByUserAndIdReq{
+				FirstUserId:  userID,
+				SecondUserId: secondUserID,
+			})
+			if err != nil {
+				log.Println("Error fetching messages:", err)
+				return
+			}
+
+			// Ikkinchi userning ismi va familyasini olish
+			UserInfo, err := h.User.GetUserById(ctx, &user.UserId{
+				Id: secondUserID,
+			})
+			if err != nil {
+				log.Println("Error getting user info", err)
+				continue
+			}
+
+			// Agar ikkinchi user ham online bo'lsa, `is_user_online = true`
+			onlineUsers.Lock()
+			_, isUserOnline := onlineUsers.connections[secondUserID]
+			onlineUsers.Unlock()
+
+			// Ma’lumotlarni to‘ldirish
+			messages.UserId = secondUserID
+			messages.UserName = UserInfo.Name
+			messages.UserSurname = UserInfo.Surname
+			messages.IsUserOnline = isUserOnline
+
+			// WebSocket orqali jo‘natish
+			if err := conn.WriteJSON(messages); err != nil {
+				log.Println("Error writing message:", err)
+				h.disconnectUser(userID)
+				return
+			}
+		case <-c.Request.Context().Done():
+			// Client ulanishni uzgan holatda
+			h.disconnectUser(userID)
+			return
+		}
+	}
+}
+
+// Foydalanuvchini offline qilish va ulanishni yopish
+func (h *Handler) disconnectUser(userID string) {
+	onlineUsers.Lock()
+	delete(onlineUsers.connections, userID)
+	onlineUsers.Unlock()
+	log.Println("User disconnected:", userID)
+}
+
+// @Summary DisconnectWebSocket
+// @Security ApiKeyAuth
+// @Description Disconnect WebSocket
+// @Tags MESSAGES
+// @Success 200 {object} string
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Router /v1/car/message/disconnectwebsocket [post]
+func (h *Handler) DisconnectWebSocket(c *gin.Context) {
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Authorization header is required"})
+		return
+	}
+
+	userID, _, err := auth.GetUserIdFromToken(token)
+	if err != nil || userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	// User ulanishini yopish
+	h.disconnectUser(userID)
+	c.JSON(http.StatusOK, gin.H{"message": "WebSocket disconnected successfully"})
 }
 
 // @Summary SendMessage

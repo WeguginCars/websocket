@@ -60,6 +60,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/car/message/disconnectwebsocket": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Disconnect WebSocket",
+                "tags": [
+                    "MESSAGES"
+                ],
+                "summary": "DisconnectWebSocket",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/car/message/{message_id}": {
             "post": {
                 "security": [

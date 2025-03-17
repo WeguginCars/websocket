@@ -42,6 +42,7 @@ const (
 	CrudsService_MarkMessageAsRead_FullMethodName             = "/cruds.CrudsService/MarkMessageAsRead"
 	CrudsService_DeleteMessage_FullMethodName                 = "/cruds.CrudsService/DeleteMessage"
 	CrudsService_CheckMessageOwnership_FullMethodName         = "/cruds.CrudsService/CheckMessageOwnership"
+	CrudsService_GetMessageByUserAndId_FullMethodName         = "/cruds.CrudsService/GetMessageByUserAndId"
 	CrudsService_RegisterNotificationToken_FullMethodName     = "/cruds.CrudsService/RegisterNotificationToken"
 	CrudsService_GetNotificationTokensByUserId_FullMethodName = "/cruds.CrudsService/GetNotificationTokensByUserId"
 	CrudsService_DeleteNotificationToken_FullMethodName       = "/cruds.CrudsService/DeleteNotificationToken"
@@ -88,6 +89,7 @@ type CrudsServiceClient interface {
 	MarkMessageAsRead(ctx context.Context, in *MessageId, opts ...grpc.CallOption) (*Empty, error)
 	DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*Empty, error)
 	CheckMessageOwnership(ctx context.Context, in *BoolCheckMessage, opts ...grpc.CallOption) (*BoolCheck, error)
+	GetMessageByUserAndId(ctx context.Context, in *GetMessageByUserAndIdReq, opts ...grpc.CallOption) (*GetMessageByUserAndIdRes, error)
 	// Notification Tokens
 	RegisterNotificationToken(ctx context.Context, in *RegisterNotificationTokenRequest, opts ...grpc.CallOption) (*Empty, error)
 	GetNotificationTokensByUserId(ctx context.Context, in *GetNotificationTokensByUserIdRequest, opts ...grpc.CallOption) (*ListNotificationTokensResponse, error)
@@ -344,6 +346,16 @@ func (c *crudsServiceClient) CheckMessageOwnership(ctx context.Context, in *Bool
 	return out, nil
 }
 
+func (c *crudsServiceClient) GetMessageByUserAndId(ctx context.Context, in *GetMessageByUserAndIdReq, opts ...grpc.CallOption) (*GetMessageByUserAndIdRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMessageByUserAndIdRes)
+	err := c.cc.Invoke(ctx, CrudsService_GetMessageByUserAndId_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *crudsServiceClient) RegisterNotificationToken(ctx context.Context, in *RegisterNotificationTokenRequest, opts ...grpc.CallOption) (*Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Empty)
@@ -505,6 +517,7 @@ type CrudsServiceServer interface {
 	MarkMessageAsRead(context.Context, *MessageId) (*Empty, error)
 	DeleteMessage(context.Context, *DeleteMessageRequest) (*Empty, error)
 	CheckMessageOwnership(context.Context, *BoolCheckMessage) (*BoolCheck, error)
+	GetMessageByUserAndId(context.Context, *GetMessageByUserAndIdReq) (*GetMessageByUserAndIdRes, error)
 	// Notification Tokens
 	RegisterNotificationToken(context.Context, *RegisterNotificationTokenRequest) (*Empty, error)
 	GetNotificationTokensByUserId(context.Context, *GetNotificationTokensByUserIdRequest) (*ListNotificationTokensResponse, error)
@@ -599,6 +612,9 @@ func (UnimplementedCrudsServiceServer) DeleteMessage(context.Context, *DeleteMes
 }
 func (UnimplementedCrudsServiceServer) CheckMessageOwnership(context.Context, *BoolCheckMessage) (*BoolCheck, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckMessageOwnership not implemented")
+}
+func (UnimplementedCrudsServiceServer) GetMessageByUserAndId(context.Context, *GetMessageByUserAndIdReq) (*GetMessageByUserAndIdRes, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMessageByUserAndId not implemented")
 }
 func (UnimplementedCrudsServiceServer) RegisterNotificationToken(context.Context, *RegisterNotificationTokenRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterNotificationToken not implemented")
@@ -1074,6 +1090,24 @@ func _CrudsService_CheckMessageOwnership_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CrudsService_GetMessageByUserAndId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMessageByUserAndIdReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrudsServiceServer).GetMessageByUserAndId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CrudsService_GetMessageByUserAndId_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrudsServiceServer).GetMessageByUserAndId(ctx, req.(*GetMessageByUserAndIdReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CrudsService_RegisterNotificationToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RegisterNotificationTokenRequest)
 	if err := dec(in); err != nil {
@@ -1406,6 +1440,10 @@ var CrudsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckMessageOwnership",
 			Handler:    _CrudsService_CheckMessageOwnership_Handler,
+		},
+		{
+			MethodName: "GetMessageByUserAndId",
+			Handler:    _CrudsService_GetMessageByUserAndId_Handler,
 		},
 		{
 			MethodName: "RegisterNotificationToken",

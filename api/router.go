@@ -30,6 +30,8 @@ func Router(hand *handler.Handler) *gin.Engine {
 		message.POST("/:message_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.MarkMessageAsRead)
 		message.DELETE("/:message_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteMessage)
 		message.POST("/disconnectwebsocket", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DisconnectWebSocket)
+		message.POST("/store-user-as-typing/:user_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.StoreUserAsTyping)
+		message.DELETE("/user-typing", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteUserTypingStatus)
 	}
 
 	car := router.Group("/v1/car/photo")

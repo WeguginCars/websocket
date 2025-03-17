@@ -10,6 +10,7 @@ import (
 	"wegugin/genproto/cruds"
 	"wegugin/genproto/user"
 	"wegugin/model"
+	"wegugin/storage/redis"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -175,6 +176,12 @@ func (h *Handler) ChatWebSocketByUserAndId(c *gin.Context) {
 				continue
 			}
 
+			Istyping, err := redis.GetStatus(c, secondUserID, userID)
+			if err != nil {
+				log.Println("Error getting typing status", err)
+				continue
+			}
+
 			// Agar ikkinchi user ham online bo'lsa, `is_user_online = true`
 			onlineUsers.Lock()
 			_, isUserOnline := onlineUsers.connections[secondUserID]
@@ -185,6 +192,7 @@ func (h *Handler) ChatWebSocketByUserAndId(c *gin.Context) {
 			messages.UserName = UserInfo.Name
 			messages.UserSurname = UserInfo.Surname
 			messages.IsUserOnline = isUserOnline
+			messages.IsUserTyping = Istyping
 
 			// WebSocket orqali jo‘natish
 			if err := conn.WriteJSON(messages); err != nil {
@@ -200,10 +208,13 @@ func (h *Handler) ChatWebSocketByUserAndId(c *gin.Context) {
 	}
 }
 
-// Foydalanuvchini offline qilish va ulanishni yopish
 func (h *Handler) disconnectUser(userID string) {
 	onlineUsers.Lock()
-	delete(onlineUsers.connections, userID)
+	conn, exists := onlineUsers.connections[userID]
+	if exists {
+		conn.Close() // WebSocket ulanishini yopish
+		delete(onlineUsers.connections, userID)
+	}
 	onlineUsers.Unlock()
 	log.Println("User disconnected:", userID)
 }
@@ -348,4 +359,77 @@ func (h *Handler) DeleteMessage(c *gin.Context) {
 	}
 	h.Log.Info("Message deleted successfully")
 	c.JSON(http.StatusOK, gin.H{"message": "Message deleted successfully"})
+}
+
+// @Summary StoreUserAsTyping
+// @Security ApiKeyAuth
+// @Description Store User As Typing
+// @Tags MESSAGES
+// @Param user_id path string true "user_id"
+// @Success 200 {object} string
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Router /v1/car/message/store-user-as-typing/{user_id} [post]
+func (h *Handler) StoreUserAsTyping(c *gin.Context) {
+	h.Log.Info("StoreUserAsTyping called")
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Authorization header is required"})
+		h.Log.Error("StoreUserAsTyping called with invalid authorization header")
+		return
+	}
+
+	userID, _, err := auth.GetUserIdFromToken(token)
+	if err != nil || userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		h.Log.Error("StoreUserAsTyping called with invalid user ID")
+		return
+	}
+	targetUserID := c.Param("user_id")
+	if targetUserID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Target user ID is required"})
+		h.Log.Error("StoreUserAsTyping called with invalid target user ID")
+		return
+	}
+	err = redis.StoreUserAsTyping(c, userID, targetUserID)
+	if err != nil {
+		h.Log.Error("Error storing user as typing", "error", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error storing user as typing"})
+		return
+	}
+	h.Log.Info("User as typing stored successfully")
+	c.JSON(http.StatusOK, gin.H{"message": "User as typing stored successfully"})
+}
+
+// @Summary DeleteUserTypingStatus
+// @Security ApiKeyAuth
+// @Description Delete User Typing Status
+// @Tags MESSAGES
+// @Success 200 {object} string
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Router /v1/car/message/user-typing [delete]
+func (h *Handler) DeleteUserTypingStatus(c *gin.Context) {
+	h.Log.Info("DeleteUserTypingStatus called")
+	token := c.GetHeader("Authorization")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Authorization header is required"})
+		h.Log.Error("DeleteUserTypingStatus called with invalid authorization header")
+		return
+	}
+
+	userID, _, err := auth.GetUserIdFromToken(token)
+	if err != nil || userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		h.Log.Error("DeleteUserTypingStatus called with invalid user ID")
+		return
+	}
+	err = redis.DeleteStatus(c, userID)
+	if err != nil {
+		h.Log.Error("Error deleting user typing status", "error", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error deleting user typing status"})
+		return
+	}
+	h.Log.Info("User typing status deleted successfully")
+	c.JSON(http.StatusOK, gin.H{"message": "User typing status deleted successfully"})
 }

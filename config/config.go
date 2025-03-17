@@ -11,6 +11,7 @@ import (
 type Config struct {
 	Postgres PostgresConfig
 	Server   ServerConfig
+	Redis    RedisConfig
 	Token    TokensConfig
 	Minio    MinioConfig
 }
@@ -73,6 +74,10 @@ func Load() *Config {
 			MINIO_SECRET_ACCESS_KEY: cast.ToString(coalesce("MINIO_SECRET_ACCESS_KEY", "access_key")),
 			MINIO_BUCKET_NAME:       cast.ToString(coalesce("MINIO_BUCKET_NAME", "twit_images")),
 			MINIO_PUBLIC_URL:        cast.ToString(coalesce("MINIO_PUBLIC_URL", "http://localhost:9000/minio/")),
+		},
+		Redis: RedisConfig{
+			RDB_ADDRESS:  cast.ToString(coalesce("RDB_ADDRESS", "localhost:6379")),
+			RDB_PASSWORD: cast.ToString(coalesce("RDB_PASSWORD", "")),
 		},
 	}
 }

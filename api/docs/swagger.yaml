@@ -140,6 +140,54 @@ paths:
       summary: DisconnectWebSocket
       tags:
       - MESSAGES
+  /v1/car/message/store-user-as-typing/{user_id}:
+    post:
+      description: Store User As Typing
+      parameters:
+      - description: user_id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: StoreUserAsTyping
+      tags:
+      - MESSAGES
+  /v1/car/message/user-typing:
+    delete:
+      description: Delete User Typing Status
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: DeleteUserTypingStatus
+      tags:
+      - MESSAGES
   /v1/car/photo/{car_id}:
     get:
       description: it will Get Car Photos

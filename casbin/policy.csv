@@ -5,3 +5,5 @@ p, user, /v1/car/message, POST
 p, user, /v1/car/message/:message_id, POST
 p, user, /v1/car/message/:message_id, DELETE
 p, user, /v1/car/message/disconnectwebsocket, POST
+p, user, /v1/car/message/store-user-as-typing/:user_id, POST
+p, user, /v1/car/message/user-typing, DELETE

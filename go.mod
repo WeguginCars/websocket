@@ -11,6 +11,8 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.3
 	github.com/joho/godotenv v1.5.1
 	github.com/minio/minio-go/v7 v7.0.88
+	github.com/pkg/errors v0.9.1
+	github.com/redis/go-redis/v9 v9.7.1
 	github.com/spf13/cast v1.7.1
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
@@ -28,8 +30,10 @@ require (
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/casbin/govaluate v1.3.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

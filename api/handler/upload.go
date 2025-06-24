@@ -134,7 +134,13 @@ func (h *Handler) DeleteImage(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "id is required"})
 		return
 	}
-	check, err := h.Crud.CheckCarOwnership(c, &pb.BoolCheckCar{UserId: userId, CarId: id})
+	imageinfo, err := h.Crud.GetImageByID(c, &pb.ImageId{Id: id})
+	if err != nil {
+		h.Log.Error("Error getting image", "error", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error getting image"})
+		return
+	}
+	check, err := h.Crud.CheckCarOwnership(c, &pb.BoolCheckCar{UserId: userId, CarId: imageinfo.CarId})
 	if err != nil {
 		h.Log.Error("Error checking car ownership", "error", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error checking car ownership"})

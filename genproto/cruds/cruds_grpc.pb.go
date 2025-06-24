@@ -50,6 +50,7 @@ const (
 	CrudsService_GetImagesByCar_FullMethodName                = "/cruds.CrudsService/GetImagesByCar"
 	CrudsService_DeleteImage_FullMethodName                   = "/cruds.CrudsService/DeleteImage"
 	CrudsService_DeleteImagesByCarId_FullMethodName           = "/cruds.CrudsService/DeleteImagesByCarId"
+	CrudsService_GetImageByID_FullMethodName                  = "/cruds.CrudsService/GetImageByID"
 	CrudsService_CreateComment_FullMethodName                 = "/cruds.CrudsService/CreateComment"
 	CrudsService_GetCommentsByCar_FullMethodName              = "/cruds.CrudsService/GetCommentsByCar"
 	CrudsService_UpdateComment_FullMethodName                 = "/cruds.CrudsService/UpdateComment"
@@ -73,7 +74,7 @@ type CrudsServiceClient interface {
 	CheckCarOwnership(ctx context.Context, in *BoolCheckCar, opts ...grpc.CallOption) (*BoolCheck, error)
 	// Saved Cars
 	SaveCar(ctx context.Context, in *SaveCarRequest, opts ...grpc.CallOption) (*Empty, error)
-	GetSavedCarsByUser(ctx context.Context, in *GetSavedCarsRequest, opts ...grpc.CallOption) (*ListCarsResponse, error)
+	GetSavedCarsByUser(ctx context.Context, in *GetSavedCarsRequest, opts ...grpc.CallOption) (*ListSavedCarsResponse, error)
 	DeleteSavedCar(ctx context.Context, in *DeleteSavedCarRequest, opts ...grpc.CallOption) (*Empty, error)
 	DeleteSavedCarsByCarId(ctx context.Context, in *CarId, opts ...grpc.CallOption) (*Empty, error)
 	CheckSavedCarOwnership(ctx context.Context, in *BoolCheckSavedCars, opts ...grpc.CallOption) (*BoolCheck, error)
@@ -99,6 +100,7 @@ type CrudsServiceClient interface {
 	GetImagesByCar(ctx context.Context, in *CarId, opts ...grpc.CallOption) (*ListImagesResponse, error)
 	DeleteImage(ctx context.Context, in *ImageId, opts ...grpc.CallOption) (*Empty, error)
 	DeleteImagesByCarId(ctx context.Context, in *CarId, opts ...grpc.CallOption) (*Empty, error)
+	GetImageByID(ctx context.Context, in *ImageId, opts ...grpc.CallOption) (*Image, error)
 	// Comments
 	CreateComment(ctx context.Context, in *CreateCommentRequest, opts ...grpc.CallOption) (*Comment, error)
 	GetCommentsByCar(ctx context.Context, in *CarId, opts ...grpc.CallOption) (*ListCommentsResponse, error)
@@ -206,9 +208,9 @@ func (c *crudsServiceClient) SaveCar(ctx context.Context, in *SaveCarRequest, op
 	return out, nil
 }
 
-func (c *crudsServiceClient) GetSavedCarsByUser(ctx context.Context, in *GetSavedCarsRequest, opts ...grpc.CallOption) (*ListCarsResponse, error) {
+func (c *crudsServiceClient) GetSavedCarsByUser(ctx context.Context, in *GetSavedCarsRequest, opts ...grpc.CallOption) (*ListSavedCarsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListCarsResponse)
+	out := new(ListSavedCarsResponse)
 	err := c.cc.Invoke(ctx, CrudsService_GetSavedCarsByUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -426,6 +428,16 @@ func (c *crudsServiceClient) DeleteImagesByCarId(ctx context.Context, in *CarId,
 	return out, nil
 }
 
+func (c *crudsServiceClient) GetImageByID(ctx context.Context, in *ImageId, opts ...grpc.CallOption) (*Image, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Image)
+	err := c.cc.Invoke(ctx, CrudsService_GetImageByID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *crudsServiceClient) CreateComment(ctx context.Context, in *CreateCommentRequest, opts ...grpc.CallOption) (*Comment, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Comment)
@@ -501,7 +513,7 @@ type CrudsServiceServer interface {
 	CheckCarOwnership(context.Context, *BoolCheckCar) (*BoolCheck, error)
 	// Saved Cars
 	SaveCar(context.Context, *SaveCarRequest) (*Empty, error)
-	GetSavedCarsByUser(context.Context, *GetSavedCarsRequest) (*ListCarsResponse, error)
+	GetSavedCarsByUser(context.Context, *GetSavedCarsRequest) (*ListSavedCarsResponse, error)
 	DeleteSavedCar(context.Context, *DeleteSavedCarRequest) (*Empty, error)
 	DeleteSavedCarsByCarId(context.Context, *CarId) (*Empty, error)
 	CheckSavedCarOwnership(context.Context, *BoolCheckSavedCars) (*BoolCheck, error)
@@ -527,6 +539,7 @@ type CrudsServiceServer interface {
 	GetImagesByCar(context.Context, *CarId) (*ListImagesResponse, error)
 	DeleteImage(context.Context, *ImageId) (*Empty, error)
 	DeleteImagesByCarId(context.Context, *CarId) (*Empty, error)
+	GetImageByID(context.Context, *ImageId) (*Image, error)
 	// Comments
 	CreateComment(context.Context, *CreateCommentRequest) (*Comment, error)
 	GetCommentsByCar(context.Context, *CarId) (*ListCommentsResponse, error)
@@ -571,7 +584,7 @@ func (UnimplementedCrudsServiceServer) CheckCarOwnership(context.Context, *BoolC
 func (UnimplementedCrudsServiceServer) SaveCar(context.Context, *SaveCarRequest) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveCar not implemented")
 }
-func (UnimplementedCrudsServiceServer) GetSavedCarsByUser(context.Context, *GetSavedCarsRequest) (*ListCarsResponse, error) {
+func (UnimplementedCrudsServiceServer) GetSavedCarsByUser(context.Context, *GetSavedCarsRequest) (*ListSavedCarsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSavedCarsByUser not implemented")
 }
 func (UnimplementedCrudsServiceServer) DeleteSavedCar(context.Context, *DeleteSavedCarRequest) (*Empty, error) {
@@ -636,6 +649,9 @@ func (UnimplementedCrudsServiceServer) DeleteImage(context.Context, *ImageId) (*
 }
 func (UnimplementedCrudsServiceServer) DeleteImagesByCarId(context.Context, *CarId) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteImagesByCarId not implemented")
+}
+func (UnimplementedCrudsServiceServer) GetImageByID(context.Context, *ImageId) (*Image, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetImageByID not implemented")
 }
 func (UnimplementedCrudsServiceServer) CreateComment(context.Context, *CreateCommentRequest) (*Comment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateComment not implemented")
@@ -1234,6 +1250,24 @@ func _CrudsService_DeleteImagesByCarId_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CrudsService_GetImageByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImageId)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CrudsServiceServer).GetImageByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CrudsService_GetImageByID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CrudsServiceServer).GetImageByID(ctx, req.(*ImageId))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CrudsService_CreateComment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateCommentRequest)
 	if err := dec(in); err != nil {
@@ -1472,6 +1506,10 @@ var CrudsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteImagesByCarId",
 			Handler:    _CrudsService_DeleteImagesByCarId_Handler,
+		},
+		{
+			MethodName: "GetImageByID",
+			Handler:    _CrudsService_GetImageByID_Handler,
 		},
 		{
 			MethodName: "CreateComment",

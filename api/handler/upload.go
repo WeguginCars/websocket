@@ -7,6 +7,9 @@ import (
 	pb "wegugin/genproto/cruds"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // @Summary CreatePhoto
@@ -127,6 +130,7 @@ func (h *Handler) DeleteImage(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+
 	h.Log.Info("DeleteImage called")
 	id := c.Param("id")
 	if len(id) == 0 {
@@ -134,30 +138,67 @@ func (h *Handler) DeleteImage(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "id is required"})
 		return
 	}
-	imageinfo, err := h.Crud.GetImageByID(c, &pb.ImageId{Id: id})
+
+	// Context va metadata yaratish
+	ctx := c.Request.Context()
+	md := metadata.New(map[string]string{
+		"Authorization": token,
+		"authorization": token,
+	})
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	// Rasmni olish
+	imageinfo, err := h.Crud.GetImageByID(ctx, &pb.ImageId{Id: id})
 	if err != nil {
 		h.Log.Error("Error getting image", "error", err)
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.NotFound:
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Image not found"})
+				return
+			case codes.Unauthenticated:
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+				return
+			}
+		}
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error getting image"})
 		return
 	}
-	check, err := h.Crud.CheckCarOwnership(c, &pb.BoolCheckCar{UserId: userId, CarId: imageinfo.CarId})
+
+	// Car ownership tekshirish
+	check, err := h.Crud.CheckCarOwnership(ctx, &pb.BoolCheckCar{UserId: userId, CarId: imageinfo.CarId})
 	if err != nil {
 		h.Log.Error("Error checking car ownership", "error", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error checking car ownership"})
 		return
 	}
+
 	if !check.Result {
 		h.Log.Error("User does not own the car")
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User does not own the car"})
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "User does not own the car"})
 		return
 	}
-	_, err = h.Crud.DeleteImage(c, &pb.ImageId{Id: id})
+
+	// MinIO'dan faylni o'chirish
+	if imageinfo.Filename != "" {
+		err = h.MINIO.DeleteFileByURL("car-images", imageinfo.Filename)
+		if err != nil {
+			h.Log.Warn("Failed to delete image from MinIO", "error", err, "filename", imageinfo.Filename)
+			// MinIO'dan o'chirishda xato bo'lsa ham davom etamiz
+		} else {
+			h.Log.Info("Image deleted from MinIO successfully", "filename", imageinfo.Filename)
+		}
+	}
+
+	// Database'dan o'chirish
+	_, err = h.Crud.DeleteImage(ctx, &pb.ImageId{Id: id})
 	if err != nil {
-		h.Log.Error("Error deleting image", "error", err)
+		h.Log.Error("Error deleting image from database", "error", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error deleting image"})
 		return
 	}
-	h.Log.Info("Image deleted successfully")
+
+	h.Log.Info("Image deleted successfully", "id", id)
 	c.JSON(http.StatusOK, gin.H{"message": "Image deleted successfully"})
 }
 
@@ -179,30 +220,88 @@ func (h *Handler) DeleteImagesByCarId(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+
 	h.Log.Info("DeleteImagesByCarId called")
-	id := c.Param("car_id")
-	if len(id) == 0 {
+	carId := c.Param("car_id")
+	if len(carId) == 0 {
 		h.Log.Error("car_id is required")
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Car id is required"})
 		return
 	}
-	check, err := h.Crud.CheckCarOwnership(c, &pb.BoolCheckCar{UserId: userId, CarId: id})
+
+	// Context va metadata yaratish
+	ctx := c.Request.Context()
+	md := metadata.New(map[string]string{
+		"Authorization": token,
+		"authorization": token,
+	})
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	// Car ownership tekshirish
+	check, err := h.Crud.CheckCarOwnership(ctx, &pb.BoolCheckCar{UserId: userId, CarId: carId})
 	if err != nil {
 		h.Log.Error("Error checking car ownership", "error", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error checking car ownership"})
 		return
 	}
+
 	if !check.Result {
 		h.Log.Error("User does not own the car")
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "User does not own the car"})
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "User does not own the car"})
 		return
 	}
-	_, err = h.Crud.DeleteImagesByCarId(c, &pb.CarId{CarId: id})
+
+	// Car ma'lumotlarini olish (rasmlar bilan birga)
+	car, err := h.Crud.GetCarById(ctx, &pb.Id{Id: carId})
 	if err != nil {
-		h.Log.Error("Error deleting images by car id", "error", err)
+		h.Log.Error("Error getting car", "error", err)
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.NotFound:
+				c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Car not found"})
+				return
+			case codes.Unauthenticated:
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+				return
+			}
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error getting car"})
+		return
+	}
+
+	// MinIO'dan barcha rasmlarni o'chirish
+	if len(car.Images) > 0 {
+		var imageURLs []string
+		for _, image := range car.Images {
+			if image.Filename != "" {
+				imageURLs = append(imageURLs, image.Filename)
+			}
+		}
+
+		// MinIO'dan fayllarni o'chirish
+		if len(imageURLs) > 0 {
+			deletedCount := 0
+			for _, imageURL := range imageURLs {
+				err = h.MINIO.DeleteFileByURL("car-images", imageURL)
+				if err != nil {
+					h.Log.Warn("Failed to delete image from MinIO", "error", err, "filename", imageURL)
+				} else {
+					deletedCount++
+					h.Log.Info("Image deleted from MinIO", "filename", imageURL)
+				}
+			}
+			h.Log.Info("MinIO deletion completed", "total", len(imageURLs), "deleted", deletedCount)
+		}
+	}
+
+	// Database'dan barcha rasmlarni o'chirish
+	_, err = h.Crud.DeleteImagesByCarId(ctx, &pb.CarId{CarId: carId})
+	if err != nil {
+		h.Log.Error("Error deleting images by car id from database", "error", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error deleting images by car id"})
 		return
 	}
-	h.Log.Info("Images deleted successfully by car id")
+
+	h.Log.Info("Images deleted successfully by car id", "car_id", carId)
 	c.JSON(http.StatusOK, gin.H{"message": "Images deleted successfully by car id"})
 }

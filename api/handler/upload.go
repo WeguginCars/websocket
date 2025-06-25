@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"wegugin/api/auth"
 	pb "wegugin/genproto/cruds"
 
@@ -142,7 +143,6 @@ func (h *Handler) DeleteImage(c *gin.Context) {
 	// Context va metadata yaratish
 	ctx := c.Request.Context()
 	md := metadata.New(map[string]string{
-		"Authorization": token,
 		"authorization": token,
 	})
 	ctx = metadata.NewOutgoingContext(ctx, md)
@@ -181,12 +181,20 @@ func (h *Handler) DeleteImage(c *gin.Context) {
 
 	// MinIO'dan faylni o'chirish
 	if imageinfo.Filename != "" {
-		err = h.MINIO.DeleteFileByURL("car-images", imageinfo.Filename)
+		// URL'dan bucket va fayl nomini ajratib olish
+		bucketName, fileName, err := h.parseBucketAndFileFromURL(imageinfo.Filename)
 		if err != nil {
-			h.Log.Warn("Failed to delete image from MinIO", "error", err, "filename", imageinfo.Filename)
-			// MinIO'dan o'chirishda xato bo'lsa ham davom etamiz
+			h.Log.Error("Failed to parse URL", "error", err, "url", imageinfo.Filename)
 		} else {
-			h.Log.Info("Image deleted from MinIO successfully", "filename", imageinfo.Filename)
+			h.Log.Info("Attempting to delete from MinIO", "bucket", bucketName, "filename", fileName, "url", imageinfo.Filename)
+
+			err = h.MINIO.DeleteFile(bucketName, fileName)
+			if err != nil {
+				h.Log.Warn("Failed to delete image from MinIO", "error", err, "bucket", bucketName, "filename", fileName)
+				// MinIO'dan o'chirishda xato bo'lsa ham davom etamiz
+			} else {
+				h.Log.Info("Image deleted from MinIO successfully", "bucket", bucketName, "filename", fileName)
+			}
 		}
 	}
 
@@ -232,7 +240,6 @@ func (h *Handler) DeleteImagesByCarId(c *gin.Context) {
 	// Context va metadata yaratish
 	ctx := c.Request.Context()
 	md := metadata.New(map[string]string{
-		"Authorization": token,
 		"authorization": token,
 	})
 	ctx = metadata.NewOutgoingContext(ctx, md)
@@ -271,27 +278,28 @@ func (h *Handler) DeleteImagesByCarId(c *gin.Context) {
 
 	// MinIO'dan barcha rasmlarni o'chirish
 	if len(car.Images) > 0 {
-		var imageURLs []string
+		deletedCount := 0
 		for _, image := range car.Images {
 			if image.Filename != "" {
-				imageURLs = append(imageURLs, image.Filename)
-			}
-		}
-
-		// MinIO'dan fayllarni o'chirish
-		if len(imageURLs) > 0 {
-			deletedCount := 0
-			for _, imageURL := range imageURLs {
-				err = h.MINIO.DeleteFileByURL("car-images", imageURL)
+				// URL'dan bucket va fayl nomini ajratib olish
+				bucketName, fileName, err := h.parseBucketAndFileFromURL(image.Filename)
 				if err != nil {
-					h.Log.Warn("Failed to delete image from MinIO", "error", err, "filename", imageURL)
+					h.Log.Warn("Failed to parse URL", "error", err, "url", image.Filename)
+					continue
+				}
+
+				h.Log.Info("Attempting to delete from MinIO", "bucket", bucketName, "filename", fileName)
+
+				err = h.MINIO.DeleteFile(bucketName, fileName)
+				if err != nil {
+					h.Log.Warn("Failed to delete image from MinIO", "error", err, "bucket", bucketName, "filename", fileName)
 				} else {
 					deletedCount++
-					h.Log.Info("Image deleted from MinIO", "filename", imageURL)
+					h.Log.Info("Image deleted from MinIO", "bucket", bucketName, "filename", fileName)
 				}
 			}
-			h.Log.Info("MinIO deletion completed", "total", len(imageURLs), "deleted", deletedCount)
 		}
+		h.Log.Info("MinIO deletion completed", "total", len(car.Images), "deleted", deletedCount)
 	}
 
 	// Database'dan barcha rasmlarni o'chirish
@@ -304,4 +312,49 @@ func (h *Handler) DeleteImagesByCarId(c *gin.Context) {
 
 	h.Log.Info("Images deleted successfully by car id", "car_id", carId)
 	c.JSON(http.StatusOK, gin.H{"message": "Images deleted successfully by car id"})
+}
+
+// URL'dan bucket va fayl nomini ajratib olish
+func (h *Handler) parseBucketAndFileFromURL(url string) (bucket, filename string, err error) {
+	// URL format: https://media.turbocarsautoexport.com/photos/filename.jpg
+	// yoki: http://localhost:9000/bucket/filename.jpg
+
+	h.Log.Info("Parsing URL", "url", url)
+
+	// "://" dan keyingi qismni olish
+	protocolIndex := strings.Index(url, "://")
+	if protocolIndex == -1 {
+		return "", "", fmt.Errorf("invalid URL format: no protocol found")
+	}
+
+	// Protocol'dan keyingi qismni olish
+	afterProtocol := url[protocolIndex+3:]
+	h.Log.Info("After protocol", "part", afterProtocol)
+
+	// Birinchi "/" dan keyingi qismni olish (path qismi)
+	firstSlashIndex := strings.Index(afterProtocol, "/")
+	if firstSlashIndex == -1 {
+		return "", "", fmt.Errorf("invalid URL format: no path found")
+	}
+
+	pathPart := afterProtocol[firstSlashIndex+1:]
+	h.Log.Info("Path part", "path", pathPart)
+
+	// Path'ni "/" bo'yicha bo'lish
+	pathParts := strings.Split(pathPart, "/")
+	if len(pathParts) < 2 {
+		return "", "", fmt.Errorf("invalid URL format: insufficient path parts")
+	}
+
+	// Birinchi qism bucket, oxirgi qism filename
+	bucket = pathParts[0]
+	filename = pathParts[len(pathParts)-1]
+
+	h.Log.Info("Parsed URL", "bucket", bucket, "filename", filename)
+
+	if bucket == "" || filename == "" {
+		return "", "", fmt.Errorf("invalid URL format: empty bucket or filename")
+	}
+
+	return bucket, filename, nil
 }

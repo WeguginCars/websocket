@@ -156,31 +156,6 @@ func (m *MinioUploader) DeleteFile(bucketName, fileName string) error {
 	return nil
 }
 
-// Ko'p fayllarni bir vaqtda o'chirish
-func (m *MinioUploader) DeleteFiles(bucketName string, fileNames []string) error {
-	ctx := context.Background()
-
-	// RemoveObjects uchun kanal yaratish
-	objectsCh := make(chan minio.ObjectInfo)
-
-	go func() {
-		defer close(objectsCh)
-		for _, fileName := range fileNames {
-			objectsCh <- minio.ObjectInfo{Key: fileName}
-		}
-	}()
-
-	// Fayllarni o'chirish
-	for rErr := range m.client.RemoveObjects(ctx, bucketName, objectsCh, minio.RemoveObjectsOptions{}) {
-		if rErr.Err != nil {
-			return fmt.Errorf("failed to delete file %s: %v", rErr.ObjectName, rErr.Err)
-		}
-		fmt.Printf("Fayl o'chirildi: %s\n", rErr.ObjectName)
-	}
-
-	return nil
-}
-
 func getContentType(fileExt string) string {
 	switch strings.ToLower(fileExt) {
 	case ".jpg", ".jpeg":

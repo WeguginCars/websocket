@@ -26,7 +26,6 @@ func (r *TopCarsRepository) CreateTopCar(ctx context.Context, topCar *model.TopC
 	// Avval shu car allaqachon active top carlar orasida borligini tekshirish
 	existsFilter := bson.M{
 		"car_id":      topCar.CarId,
-		"category":    topCar.Category,
 		"finished_at": bson.M{"$gt": time.Now()}, // hali muddati o'tmagan
 		"deleted_at":  nil,                       // o'chirilmagan
 	}

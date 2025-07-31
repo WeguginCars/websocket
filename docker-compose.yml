@@ -1,22 +1,50 @@
 version: '3.9'
 
-services:  
+services:
   websocket-service:
     container_name: websocket-gateway
     build: .
     ports:
       - "4444:4444"
     networks:
-     - wegugin
+      - wegugin
+    depends_on:
+      - mongodb
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4444/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "curl -f http://localhost:4444/swagger/index.html || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    environment:
+      - MDB_ADDRESS=mongodb://root:example@mongo_new:27017
+      - MDB_NAME=wegugin_websocket_service
 
+  mongodb:
+    image: mongo:latest
+    container_name: mongo_new
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - db2:/data/db
+    networks:
+      - wegugin
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
 networks:
   wegugin:
     external: true
 
-   
+volumes:
+  db2:
+    driver: local

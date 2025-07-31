@@ -42,5 +42,15 @@ func Router(hand *handler.Handler) *gin.Engine {
 		car.DELETE("/car/:car_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteImagesByCarId)
 	}
 
+	topcar := router.Group("/v1/topcar")
+	{
+		topcar.POST("", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.CreateTopCar)
+		topcar.GET("", hand.GetTopCars)        // Public endpoint
+		topcar.GET("/:id", hand.GetTopCarByID) // Public endpoint
+		topcar.DELETE("/:id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteTopCarByID)
+		topcar.DELETE("/user/:user_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteTopCarsByUserID)
+		topcar.DELETE("/car/:car_id", middleware.Check, middleware.CheckPermissionMiddleware(hand.Enforcer), hand.DeleteTopCarsByCarID)
+	}
+
 	return router
 }

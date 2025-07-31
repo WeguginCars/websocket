@@ -25,6 +25,103 @@ definitions:
       sender_id:
         type: string
     type: object
+  handler.CreateTopCarRequest:
+    properties:
+      car_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      category:
+        example: daily,weekly,monthly
+        type: string
+    required:
+    - car_id
+    - category
+    type: object
+  handler.CreateTopCarResponse:
+    properties:
+      car_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      category:
+        example: daily
+        type: string
+      created_at:
+        example: "2024-01-01T12:00:00Z"
+        type: string
+      finished_at:
+        example: "2024-01-02T12:00:00Z"
+        type: string
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      message:
+        example: Top car created successfully
+        type: string
+      user_id:
+        example: 123e4567-e89b-12d3-a456-426614174001
+        type: string
+    type: object
+  handler.DeleteResponse:
+    properties:
+      deleted_count:
+        example: 5
+        type: integer
+      message:
+        example: Top cars deleted successfully
+        type: string
+    type: object
+  handler.ErrorResponse:
+    properties:
+      error:
+        example: Error description
+        type: string
+    type: object
+  handler.GetTopCarsResponse:
+    properties:
+      limit:
+        example: 50
+        type: integer
+      skip:
+        example: 0
+        type: integer
+      top_cars:
+        items:
+          $ref: '#/definitions/handler.TopCarResponse'
+        type: array
+      total:
+        example: 100
+        type: integer
+    type: object
+  handler.MessageResponse:
+    properties:
+      message:
+        example: Operation completed successfully
+        type: string
+    type: object
+  handler.TopCarResponse:
+    properties:
+      car_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      category:
+        example: daily
+        type: string
+      created_at:
+        example: "2024-01-01T12:00:00Z"
+        type: string
+      deleted_at:
+        example: "2024-01-03T12:00:00Z"
+        type: string
+      finished_at:
+        example: "2024-01-02T12:00:00Z"
+        type: string
+      id:
+        example: 507f1f77bcf86cd799439011
+        type: string
+      user_id:
+        example: 123e4567-e89b-12d3-a456-426614174001
+        type: string
+    type: object
   model.SendMessageBody:
     properties:
       content:
@@ -314,6 +411,242 @@ paths:
       summary: DeleteImagesByCarId
       tags:
       - IMAGES
+  /v1/topcar:
+    get:
+      consumes:
+      - application/json
+      description: Get filtered list of top cars
+      parameters:
+      - description: Category filter (daily, weekly, monthly)
+        in: query
+        name: category
+        type: string
+      - description: User ID filter
+        in: query
+        name: user_id
+        type: string
+      - description: Car ID filter
+        in: query
+        name: car_id
+        type: string
+      - description: Sort by (finished_at_asc, finished_at_desc, created_at_asc, created_at_desc)
+        in: query
+        name: sort_by
+        type: string
+      - description: Show expired top cars
+        in: query
+        name: show_expired
+        type: boolean
+      - description: Show deleted top cars
+        in: query
+        name: show_deleted
+        type: boolean
+      - description: Limit results (default 50)
+        in: query
+        name: limit
+        type: integer
+      - description: Skip results for pagination
+        in: query
+        name: skip
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.GetTopCarsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Get list of top cars
+      tags:
+      - TopCars
+    post:
+      consumes:
+      - application/json
+      description: Add a new car to top cars list
+      parameters:
+      - description: Top Car data
+        in: body
+        name: topcar
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateTopCarRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handler.CreateTopCarResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new top car
+      tags:
+      - TopCars
+  /v1/topcar/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a specific top car by its ID
+      parameters:
+      - description: Top Car ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete top car by ID
+      tags:
+      - TopCars
+    get:
+      consumes:
+      - application/json
+      description: Get a specific top car by its ID
+      parameters:
+      - description: Top Car ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.TopCarResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: Get top car by ID
+      tags:
+      - TopCars
+  /v1/topcar/car/{car_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all top cars for a specific car
+      parameters:
+      - description: Car ID
+        in: path
+        name: car_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.DeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete top cars by car ID
+      tags:
+      - TopCars
+  /v1/topcar/user/{user_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete all top cars belonging to a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handler.DeleteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete top cars by user ID
+      tags:
+      - TopCars
 securityDefinitions:
   ApiKeyAuth:
     description: API Gateway

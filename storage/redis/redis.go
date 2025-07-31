@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 	"wegugin/config"
+	"wegugin/storage/repo"
 
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 )
 
-func ConnectDB() *redis.Client {
+func ConnectRDB() *redis.Client {
 	conf := config.Load()
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     conf.Redis.RDB_ADDRESS,
@@ -20,10 +21,18 @@ func ConnectDB() *redis.Client {
 
 	return rdb
 }
-func StoreUserAsTyping(ctx context.Context, TyperId, UserId string) error {
-	rdb := ConnectDB()
 
-	err := rdb.Set(ctx, TyperId, UserId, 2*time.Minute).Err()
+type RedisRepository struct {
+	Rdb *redis.Client
+}
+
+func NewRedisRepository(rdb *redis.Client) repo.IRedisStorage {
+	return &RedisRepository{Rdb: rdb}
+}
+
+func (s RedisRepository) StoreUserAsTyping(ctx context.Context, TyperId, UserId string) error {
+
+	err := s.Rdb.Set(ctx, TyperId, UserId, 2*time.Minute).Err()
 	if err != nil {
 		return errors.Wrap(err, "failed to set user in Redis")
 	}
@@ -31,9 +40,8 @@ func StoreUserAsTyping(ctx context.Context, TyperId, UserId string) error {
 	return nil
 }
 
-func GetStatus(ctx context.Context, TyperId, UserId string) (bool, error) {
-	rdb := ConnectDB()
-	code, err := rdb.Get(ctx, TyperId).Result()
+func (s RedisRepository) GetStatus(ctx context.Context, TyperId, UserId string) (bool, error) {
+	code, err := s.Rdb.Get(ctx, TyperId).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return false, fmt.Errorf("no status found for UserId: %s", TyperId)
@@ -46,9 +54,8 @@ func GetStatus(ctx context.Context, TyperId, UserId string) (bool, error) {
 	return false, nil
 }
 
-func DeleteStatus(ctx context.Context, TyperId string) error {
-	rdb := ConnectDB()
-	err := rdb.Del(ctx, TyperId).Err()
+func (s RedisRepository) DeleteStatus(ctx context.Context, TyperId string) error {
+	err := s.Rdb.Del(ctx, TyperId).Err()
 	if err != nil {
 		return errors.Wrap(err, "failed to delete user status from Redis")
 	}

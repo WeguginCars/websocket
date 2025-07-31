@@ -7,3 +7,9 @@ p, user, /v1/car/message/:message_id, DELETE
 p, user, /v1/car/message/disconnectwebsocket, POST
 p, user, /v1/car/message/store-user-as-typing/:user_id, POST
 p, user, /v1/car/message/user-typing, DELETE
+p, user, /v1/topcar, POST
+p, user, /v1/topcar/:id, PUT
+p, user, /v1/topcar/:id, DELETE
+p, user, /v1/topcar/user/:user_id, DELETE
+p, user, /v1/topcar/car/:car_id, DELETE
+p, admin, /v1/topcar/cleanup, DELETE

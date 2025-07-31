@@ -9,19 +9,16 @@ import (
 )
 
 type Config struct {
-	Postgres PostgresConfig
-	Server   ServerConfig
-	Redis    RedisConfig
-	Token    TokensConfig
-	Minio    MinioConfig
+	Mongo  MongoConfig
+	Server ServerConfig
+	Redis  RedisConfig
+	Token  TokensConfig
+	Minio  MinioConfig
 }
 
-type PostgresConfig struct {
-	DB_NAME     string
-	DB_PORT     string
-	DB_PASSWORD string
-	DB_USER     string
-	DB_HOST     string
+type MongoConfig struct {
+	MDB_ADDRESS string
+	MDB_NAME    string
 }
 
 type RedisConfig struct {
@@ -53,12 +50,9 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Postgres: PostgresConfig{
-			DB_HOST:     cast.ToString(coalesce("DB_HOST", "localhost")),
-			DB_PORT:     cast.ToString(coalesce("DB_PORT", "5432")),
-			DB_USER:     cast.ToString(coalesce("DB_USER", "postgres")),
-			DB_NAME:     cast.ToString(coalesce("DB_NAME", "postgres")),
-			DB_PASSWORD: cast.ToString(coalesce("DB_PASSWORD", "3333")),
+		Mongo: MongoConfig{
+			MDB_ADDRESS: cast.ToString(coalesce("MDB_ADDRESS", "localhost")),
+			MDB_NAME:    cast.ToString(coalesce("MDB_NAME", "5432")),
 		},
 		Server: ServerConfig{
 			HTTP_PORT: cast.ToString(coalesce("HTTP_PORT", ":1234")),

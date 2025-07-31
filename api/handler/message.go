@@ -10,7 +10,6 @@ import (
 	"wegugin/genproto/cruds"
 	"wegugin/genproto/user"
 	"wegugin/model"
-	"wegugin/storage/redis"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -176,7 +175,7 @@ func (h *Handler) ChatWebSocketByUserAndId(c *gin.Context) {
 				continue
 			}
 
-			Istyping, _ := redis.GetStatus(c, secondUserID, userID)
+			Istyping, _ := h.Cruds.Redis().GetStatus(c, secondUserID, userID)
 			// Agar ikkinchi user ham online bo'lsa, `is_user_online = true`
 			onlineUsers.Lock()
 			_, isUserOnline := onlineUsers.connections[secondUserID]
@@ -386,7 +385,7 @@ func (h *Handler) StoreUserAsTyping(c *gin.Context) {
 		h.Log.Error("StoreUserAsTyping called with invalid target user ID")
 		return
 	}
-	err = redis.StoreUserAsTyping(c, userID, targetUserID)
+	err = h.Cruds.Redis().StoreUserAsTyping(c, userID, targetUserID)
 	if err != nil {
 		h.Log.Error("Error storing user as typing", "error", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error storing user as typing"})
@@ -419,7 +418,7 @@ func (h *Handler) DeleteUserTypingStatus(c *gin.Context) {
 		h.Log.Error("DeleteUserTypingStatus called with invalid user ID")
 		return
 	}
-	err = redis.DeleteStatus(c, userID)
+	err = h.Cruds.Redis().DeleteStatus(c, userID)
 	if err != nil {
 		h.Log.Error("Error deleting user typing status", "error", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error deleting user typing status"})
